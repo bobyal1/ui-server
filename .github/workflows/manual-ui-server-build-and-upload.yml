@@ -22,24 +22,27 @@ jobs:
           token: ${{ secrets.MY_GITHUB_TOKEN }}
           path: 'custom-ui-source'
 
-      # 2. Setup Node and pnpm to compile your custom UI
+      # 2. Setup Node and the LATEST pnpm version to parse the modern workspace schema properly
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install pnpm
+      - name: Install Latest pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10  # Explicitly upgrades from v9 to v10 to support modern workspaces
 
       # 3. Build the frontend server assets from your fork
       - name: Build Frontend Assets
         run: |
           cd custom-ui-source
-          # Passing the workspace-root flag forces pnpm to process the monorepo configuration properly
-          pnpm install --workspace-root
+          # 1. Install dependencies across the workspace properly
+          pnpm install
+          
+          # 2. Build the exact distribution files the Go embedded server targets
           pnpm run build:server
+
 
       # 4. Clear default assets and inject your custom compiled assets
       - name: Sync Assets into UI Server
