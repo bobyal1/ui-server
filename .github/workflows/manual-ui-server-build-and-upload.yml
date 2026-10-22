@@ -1,0 +1,72 @@
+name: Build Custom UI Server
+
+on:
+  workflow_dispatch: # Allows you to trigger this manually with a single click
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compile and Embed Custom UI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ui-server
+        uses: actions/checkout@v4
+
+      # 1. Clone your personal UI fork into a temporary folder
+      - name: Checkout Custom UI Fork
+        uses: actions/checkout@v4
+        with:
+          repository: 'bobyal1/ui' # <-- Replace with your GitHub username
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          path: 'custom-ui-source'
+
+      # 2. Setup Node and pnpm to compile your custom UI
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # 3. Build the frontend server assets from your fork
+      - name: Build Frontend Assets
+        run: |
+          cd custom-ui-source
+          pnpm install
+          pnpm run build:server
+
+      # 4. Clear default assets and inject your custom compiled assets
+      - name: Sync Assets into UI Server
+        run: |
+          rm -rf server/ui/assets/*
+          cp -r custom-ui-source/dist/* server/ui/assets/
+          rm -rf custom-ui-source # Clean up source files before Go build
+
+      # 5. Setup Go to compile the backend server binary
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23' # Matches Temporal's core requirements
+
+      # 6. Build the pure static Go binary with your UI embedded natively
+      - name: Compile Statically Linked UI Server
+        run: |
+          mkdir -p dist/
+          export CGO_ENABLED=0
+          go build -v \
+            -ldflags="-s -w -extldflags '-static'" \
+            -o dist/ui-server \
+            ./cmd/server
+
+      # 7. Upload the standalone compiled binary to your workflow run
+      - name: Upload Custom UI Server Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-ui-server-linux-amd64
+          path: dist/ui-server
+          retention-days: 14
