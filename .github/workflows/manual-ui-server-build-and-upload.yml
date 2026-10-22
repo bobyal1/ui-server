@@ -47,10 +47,18 @@ jobs:
       # 4. Clear default assets and inject your custom compiled assets from Temporal's specific path
       - name: Sync Assets into UI Server
         run: |
-          rm -rf server/ui/assets/*
-          # Temporal UI outputs its server distribution files into its own server/ui/assets directory
+          # 1. Clean the target area if it exists
+          rm -rf server/ui/assets/
+          
+          # 2. Re-create the folder structure cleanly to avoid "No such file" errors
+          mkdir -p server/ui/assets/
+          
+          # 3. Copy the compiled assets over
           cp -r custom-ui-source/server/ui/assets/* server/ui/assets/
-          rm -rf custom-ui-source # Clean up source files before Go build
+          
+          # 4. Clean up source files before Go build
+          rm -rf custom-ui-source 
+
 
 
       # 5. Setup Go to compile the backend server binary
