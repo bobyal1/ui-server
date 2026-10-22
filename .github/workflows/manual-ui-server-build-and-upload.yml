@@ -37,7 +37,8 @@ jobs:
       - name: Build Frontend Assets
         run: |
           cd custom-ui-source
-          pnpm install
+          # Passing the workspace-root flag forces pnpm to process the monorepo configuration properly
+          pnpm install --workspace-root
           pnpm run build:server
 
       # 4. Clear default assets and inject your custom compiled assets
