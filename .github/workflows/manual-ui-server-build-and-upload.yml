@@ -44,12 +44,14 @@ jobs:
           pnpm run build:server
 
 
-      # 4. Clear default assets and inject your custom compiled assets
+      # 4. Clear default assets and inject your custom compiled assets from Temporal's specific path
       - name: Sync Assets into UI Server
         run: |
           rm -rf server/ui/assets/*
-          cp -r custom-ui-source/dist/* server/ui/assets/
+          # Temporal UI outputs its server distribution files into its own server/ui/assets directory
+          cp -r custom-ui-source/server/ui/assets/* server/ui/assets/
           rm -rf custom-ui-source # Clean up source files before Go build
+
 
       # 5. Setup Go to compile the backend server binary
       - name: Setup Go
